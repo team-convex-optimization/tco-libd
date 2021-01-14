@@ -6,6 +6,7 @@ pushd build
 clang \
     -Wall \
     -std=c11 \
+    -fPIC \
     -c \
     -I ../code \
     -I ../include \
