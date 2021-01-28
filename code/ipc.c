@@ -43,14 +43,14 @@ int shmem_map(
     if (shmem_fd == -1)
     {
         log_error("shm_open: %s", strerror(errno));
-        log_error("Failed to open the shared memory object.\n");
+        log_error("Failed to open the shared memory object");
         return -1;
     }
     *shmem = (struct tco_shmem_data_control *)mmap(0, shmem_size, page_permissions, MAP_SHARED, shmem_fd, 0);
     if (*shmem == MAP_FAILED)
     {
         log_error("mmap: %s", strerror(errno));
-        log_error("Failed to map the shared memory object into memory.\n");
+        log_error("Failed to map the shared memory object into memory");
         return -1;
     }
     if (close(shmem_fd) == -1) /* No longer needed. */
