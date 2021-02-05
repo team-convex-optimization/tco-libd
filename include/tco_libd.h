@@ -27,9 +27,9 @@ int shmem_map(
 enum log_flags
 {
     LOG_OFF = 0,
-    LOG_ERROR,
-    LOG_INFO,
-    LOG_DEBUG,
+    LOG_ERROR = 1 << 0,
+    LOG_INFO = 1 << 1,
+    LOG_DEBUG = 1 << 2,
 };
 
 /**
