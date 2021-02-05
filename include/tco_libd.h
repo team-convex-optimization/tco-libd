@@ -41,6 +41,12 @@ enum log_flags
  */
 int log_init(char *caller, const char *log_path);
 
+/**
+ * @brief Deinitializes the logger. It will close the log file and reset the caller name.
+ * @return 0 on success, -1 on failure. On failure, the caller name is guaranteed to persist.
+ */
+int log_deinit();
+
 void log_error(const char *msg, ...);
 void log_info(const char *msg, ...);
 void log_debug(const char *msg, ...);

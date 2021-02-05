@@ -43,6 +43,23 @@ int log_init(char *caller, const char *log_path)
     }
 }
 
+int log_deinit()
+{
+    if (log_level != LOG_OFF)
+    {
+        if (fclose(log_file) != 0)
+        {
+            return -1;
+        }
+        caller_name = NULL;
+        return 0;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
 void log_error(const char *message, ...)
 {
     if (log_level & LOG_ERROR)
