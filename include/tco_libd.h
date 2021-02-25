@@ -57,7 +57,6 @@ typedef enum i2c_error_t
     ERR_OK = 0, /* Weird naming but its done for consistency. */
     ERR_UNK = 1,
     ERR_CRIT,
-    ERR_NOMEM,
     ERR_I2C_WRITE,
     ERR_I2C_READ,
     ERR_I2C_CTRL
@@ -75,9 +74,10 @@ int i2c_port_open(int interface_id);
  * @param i2c_port_fd File descriptor of the i2c port.
  * @param cmd The byte that will be interpreted by the slave.
  * @param data The data that will be sent to the slave.
+ * @param data_send When >0 data will be sent after command, when =0 data will be ignored.
  * @return Status code
  */
-i2c_error_t i2c_cmd_write(int i2c_port_fd, uint8_t i2c_addr, uint8_t cmd, uint8_t data);
+i2c_error_t i2c_cmd_write(int i2c_port_fd, uint8_t i2c_addr, uint8_t cmd, uint8_t data, uint8_t data_send);
 
 /**
  * @brief Send a command and receive output. E.g. Send a register address, and read its contents.

@@ -20,7 +20,7 @@ int i2c_port_open(int interface_id)
     return open(path, O_RDWR);
 }
 
-i2c_error_t i2c_cmd_write(int i2c_port_fd, uint8_t i2c_addr, uint8_t cmd, uint8_t data)
+i2c_error_t i2c_cmd_write(int i2c_port_fd, uint8_t i2c_addr, uint8_t cmd, uint8_t data, uint8_t data_send)
 {
     if (ioctl(i2c_port_fd, I2C_SLAVE, i2c_addr) < 0)
     {
@@ -28,12 +28,25 @@ i2c_error_t i2c_cmd_write(int i2c_port_fd, uint8_t i2c_addr, uint8_t cmd, uint8_
         log_error("ioctl: %s", strerror(errno));
         return ERR_I2C_CTRL;
     }
-    if (i2c_smbus_write_byte_data(i2c_port_fd, cmd, data) != 0)
+    if (data_send)
     {
-        log_error("Failed to send command and data");
-        log_error("i2c_smbus_write_byte_data: %s", strerror(errno));
-        return ERR_I2C_WRITE;
+        if (i2c_smbus_write_byte_data(i2c_port_fd, cmd, data) != 0)
+        {
+            log_error("Failed to send command and data");
+            log_error("i2c_smbus_write_byte_data: %s", strerror(errno));
+            return ERR_I2C_WRITE;
+        }
     }
+    else
+    {
+        if (i2c_smbus_write_byte(i2c_port_fd, cmd) != 0)
+        {
+            log_error("Failed to send command");
+            log_error("i2c_smbus_write_byte: %s", strerror(errno));
+            return ERR_I2C_WRITE;
+        }
+    }
+
     return ERR_OK;
 }
 
