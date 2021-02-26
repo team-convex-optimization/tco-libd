@@ -11,7 +11,7 @@
 
 #include "tco_libd.h"
 
-i2c_error_t i2c_port_open(uint8_t const interface_id, int *fd_loc)
+error_t i2c_port_open(uint8_t const interface_id, int *fd_loc)
 {
     if (interface_id > 9)
     {
@@ -29,10 +29,10 @@ i2c_error_t i2c_port_open(uint8_t const interface_id, int *fd_loc)
         return ERR_CRIT;
     }
     *fd_loc = fd;
-    return ERR_CRIT;
+    return ERR_OK;
 }
 
-i2c_error_t i2c_cmd_write(int const i2c_port_fd, uint8_t const i2c_addr, uint8_t const cmd, uint8_t *const data, uint8_t const data_size)
+error_t i2c_cmd_write(int const i2c_port_fd, uint8_t const i2c_addr, uint8_t const cmd, uint8_t *const data, uint8_t const data_size)
 {
     if (ioctl(i2c_port_fd, I2C_SLAVE, i2c_addr) < 0)
     {
@@ -59,7 +59,7 @@ i2c_error_t i2c_cmd_write(int const i2c_port_fd, uint8_t const i2c_addr, uint8_t
     return ERR_OK;
 }
 
-i2c_error_t i2c_cmd_read(int const i2c_port_fd, uint8_t const i2c_addr, uint8_t const cmd, uint8_t *const output, uint8_t const output_size)
+error_t i2c_cmd_read(int const i2c_port_fd, uint8_t const i2c_addr, uint8_t const cmd, uint8_t *const output, uint8_t const output_size)
 {
     if (ioctl(i2c_port_fd, I2C_SLAVE, i2c_addr) < 0)
     {
@@ -76,7 +76,7 @@ i2c_error_t i2c_cmd_read(int const i2c_port_fd, uint8_t const i2c_addr, uint8_t 
     }
     for (uint8_t byte_idx = 0; byte_idx < output_size; byte_idx++)
     {
-        int const output_tmp = i2c_smbus_read(i2c_port_fd);
+        int const output_tmp = i2c_smbus_read_byte(i2c_port_fd);
         if (output_tmp < 0)
         {
             log_error("Failed to read byte number %i", byte_idx);

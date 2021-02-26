@@ -2,17 +2,7 @@
 #define _TCO_LIBD_I2C_H_
 
 #include <stdint.h>
-
-/* I2C status codes */
-typedef enum i2c_error_t
-{
-    ERR_OK = 0, /* Weird naming but its done for consistency. */
-    ERR_UNK = 1,
-    ERR_CRIT,
-    ERR_I2C_WRITE,
-    ERR_I2C_READ,
-    ERR_I2C_CTRL
-} i2c_error_t;
+#include "tco_libd.h"
 
 /**
  * @brief Open an I2C port.
@@ -20,7 +10,7 @@ typedef enum i2c_error_t
  * @param fd_loc Location where the file descriptor will be written.
  * @return Status code.
  */
-i2c_error_t i2c_port_open(uint8_t const interface_id, int *fd_loc);
+error_t i2c_port_open(uint8_t const interface_id, int *fd_loc);
 
 /**
  * @brief Send a command with data. E.g. Send a register address, and write to its contents.
@@ -32,7 +22,7 @@ i2c_error_t i2c_port_open(uint8_t const interface_id, int *fd_loc);
  * slave in a row after sending the command.
  * @return Status code.
  */
-i2c_error_t i2c_cmd_read(int const i2c_port_fd, uint8_t const i2c_addr, uint8_t const cmd, uint8_t *const output, uint8_t const output_size);
+error_t i2c_cmd_write(int const i2c_port_fd, uint8_t const i2c_addr, uint8_t const cmd, uint8_t *const data, uint8_t const data_size);
 
 /**
  * @brief Send a command and receive output. E.g. Send a register address, and read its contents.
@@ -42,6 +32,6 @@ i2c_error_t i2c_cmd_read(int const i2c_port_fd, uint8_t const i2c_addr, uint8_t 
  * @param output_size The number of bytes that are expected to be sent back by the slave.
  * @return Status code.
  */
-i2c_error_t i2c_cmd_read(int const i2c_port_fd, uint8_t const i2c_addr, uint8_t const cmd, uint8_t *const output, uint8_t const output_size);
+error_t i2c_cmd_read(int const i2c_port_fd, uint8_t const i2c_addr, uint8_t const cmd, uint8_t *const output, uint8_t const output_size);
 
 #endif /* _TCO_LIBD_I2C_H_ */
