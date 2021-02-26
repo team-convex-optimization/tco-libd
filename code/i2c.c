@@ -11,13 +11,24 @@
 
 #include "tco_libd.h"
 
-#define I2C_PATH "/dev/i2c-"
-
-int i2c_port_open(int interface_id)
+int i2c_port_open(uint8_t interface_id)
 {
-    char path[sizeof(I2C_PATH) + 1] = I2C_PATH "%i";
-    sprintf(path, path, interface_id);
-    return open(path, O_RDWR);
+    if (interface_id > 9)
+    {
+        log_error("I2C adapter IDs greater than 9 are not supported");
+        return -1;
+    }
+    char id_str = '0' + interface_id;
+    char path[11] = "/dev/i2c- \0";
+    path[9] = id_str;
+    int fd = open(path, O_RDWR);
+    if (fd == -1)
+    {
+        log_error("open: %s", strerror(errno));
+        log_error("Tried to open '%s'", path);
+        return -1;
+    }
+    return fd;
 }
 
 i2c_error_t i2c_cmd_write(int i2c_port_fd, uint8_t i2c_addr, uint8_t cmd, uint8_t data, uint8_t data_send)

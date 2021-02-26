@@ -67,7 +67,7 @@ typedef enum i2c_error_t
  * @param interface_id  The interface to open. E.g. 1 means i2c-1 will be opened (if it exists).
  * @return File descriptor of the opened port on success, -1 on failure.
  */
-int i2c_port_open(int interface_id);
+int i2c_port_open(uint8_t interface_id);
 
 /**
  * @brief Send a command with data. E.g. Send a register address, and write to its contents.
