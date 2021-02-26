@@ -11,7 +11,7 @@
 
 #include "tco_libd.h"
 
-error_t i2c_port_open(uint8_t const interface_id, int *fd_loc)
+error_t i2c_port_open(uint8_t const interface_id, int *const fd_loc)
 {
     if (interface_id > 9)
     {
@@ -40,22 +40,31 @@ error_t i2c_cmd_write(int const i2c_port_fd, uint8_t const i2c_addr, uint8_t con
         log_error("ioctl: %s", strerror(errno));
         return ERR_I2C_CTRL;
     }
-    if (i2c_smbus_write_byte(i2c_port_fd, cmd) != 0)
+
+    if (data_size == 0)
     {
-        log_error("Failed to send command");
-        log_error("i2c_smbus_write_byte: %s", strerror(errno));
-        return ERR_I2C_WRITE;
-    }
-    for (uint8_t data_idx = 0; data_idx < data_size; data_idx++)
-    {
-        if (i2c_smbus_write_byte(i2c_port_fd, data[data_idx]) != 0)
+        if (i2c_smbus_write_byte(i2c_port_fd, cmd) != 0)
         {
-            log_error("Failed to send command");
             log_error("i2c_smbus_write_byte: %s", strerror(errno));
             return ERR_I2C_WRITE;
         }
     }
-
+    else if (data_size == 1)
+    {
+        if (i2c_smbus_write_byte_data(i2c_port_fd, cmd, data[0]) != 0)
+        {
+            log_error("i2c_smbus_write_byte_data: %s", strerror(errno));
+            return ERR_I2C_WRITE;
+        }
+    }
+    else
+    {
+        if (i2c_smbus_write_block_data(i2c_port_fd, cmd, data_size, data) != 0)
+        {
+            log_error("i2c_smbus_write_block_data: %s", strerror(errno));
+            return ERR_I2C_WRITE;
+        }
+    }
     return ERR_OK;
 }
 
@@ -68,22 +77,49 @@ error_t i2c_cmd_read(int const i2c_port_fd, uint8_t const i2c_addr, uint8_t cons
         return ERR_I2C_CTRL;
     }
 
-    if (i2c_smbus_write_byte(i2c_port_fd, cmd) != 0)
+    if (output_size == 1)
     {
-        log_error("Failed to send command");
-        log_error("i2c_smbus_write_byte: %s", strerror(errno));
-        return ERR_I2C_WRITE;
-    }
-    for (uint8_t byte_idx = 0; byte_idx < output_size; byte_idx++)
-    {
-        int const output_tmp = i2c_smbus_read_byte(i2c_port_fd);
-        if (output_tmp < 0)
+        int const output_tmp = i2c_smbus_read_byte_data(i2c_port_fd, cmd);
+        if (output_tmp != -1)
         {
-            log_error("Failed to read byte number %i", byte_idx);
-            log_error("i2c_smbus_read: %s", strerror(errno));
+            output[0] = output_tmp;
+        }
+        else
+        {
+            log_error("Failed to read the byte from slave");
+            log_error("i2c_smbus_read_byte_data: %s", strerror(errno));
             return ERR_I2C_READ;
         }
-        output[byte_idx] = output_tmp;
+    }
+    else
+    {
+        uint8_t output_size_actual = 0;
+        /* "i2c_smbus_read_block_data" requires that output be at least 32 bits in size. */
+        if (output_size < 4)
+        {
+            uint8_t output_tmp[4] = {0, 0, 0, 0};
+            output_size_actual = i2c_smbus_read_block_data(i2c_port_fd, cmd, output_tmp);
+            if (output_size_actual != output_size)
+            {
+                log_error("Did not receive the expected number of bytes, expected %u, got %u", output_size, output_size_actual);
+                log_error("i2c_smbus_read_block_data: %s", strerror(errno));
+                return ERR_I2C_READ;
+            }
+            else
+            {
+                memcpy(output, &output_tmp, output_size);
+            }
+        }
+        else
+        {
+            output_size_actual = i2c_smbus_read_block_data(i2c_port_fd, cmd, output);
+            if (output_size_actual != output_size)
+            {
+                log_error("Did not receive the expected number of bytes, expected %u, got %u", output_size, output_size_actual);
+                log_error("i2c_smbus_read_block_data: %s", strerror(errno));
+                return ERR_I2C_READ;
+            }
+        }
     }
     return ERR_OK;
 }

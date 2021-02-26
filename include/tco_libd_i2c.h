@@ -10,7 +10,7 @@
  * @param fd_loc Location where the file descriptor will be written.
  * @return Status code.
  */
-error_t i2c_port_open(uint8_t const interface_id, int *fd_loc);
+error_t i2c_port_open(uint8_t const interface_id, int *const fd_loc);
 
 /**
  * @brief Send a command with data. E.g. Send a register address, and write to its contents.
