@@ -8,7 +8,10 @@ typedef enum error_t
     ERR_CRIT,
     ERR_I2C_WRITE,
     ERR_I2C_READ,
-    ERR_I2C_CTRL
+    ERR_I2C_CTRL,
+    ERR_GPIO_READ,
+    ERR_GPIO_WRITE,
+    ERR_GPIO_CTRL,
 } error_t;
 
 #include "tco_libd_ipc.h"

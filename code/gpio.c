@@ -2,98 +2,93 @@
 
 #include "tco_libd.h"
 
-gpio_handle_t gpio_line_init(uint8_t chip_id, enum gpio_dir dir, uint8_t pin)
-{
-    gpio_handle_t gpio_handle = {NULL, NULL};
-    struct gpiod_chip *chip = NULL;
-    struct gpiod_line *line = NULL;
+/* XXX: A general problem is where two pins connected to the same chip get initialized then one of
+them is freed. This might lead to all other pins on the chip that were previously initialized to not
+work anymore. */
 
+error_t gpio_handle_get(gpio_handle_t *const handle, uint8_t const chip_id, enum gpio_dir const dir, uint8_t const pin)
+{
     if (chip_id > 9)
     {
         log_error("GPIO chip IDs greater than 9 are not supported");
-        goto clean_up;
+        gpio_line_close(handle);
+        return ERR_CRIT;
     }
     char id_str = '0' + chip_id;
     char gpio_chip_name[10] = "gpiochip \0";
     gpio_chip_name[8] = id_str;
 
-    chip = gpiod_chip_open_by_name(gpio_chip_name);
-    if (!chip)
+    handle->chip = gpiod_chip_open_by_name(gpio_chip_name);
+    if (!handle->chip)
     {
         log_error("Opening GPIO chip by name failed");
-        goto clean_up;
+        gpio_line_close(handle);
+        return ERR_GPIO_CTRL;
     }
 
-    line = gpiod_chip_get_line(chip, pin);
-    if (!line)
+    handle->line = gpiod_chip_get_line(handle->chip, pin);
+    if (!handle->line)
     {
         log_error("Getting chip line (GPIO_ID : %d) failed", pin);
-        goto clean_up;
+        gpio_line_close(handle);
+        return ERR_GPIO_CTRL;
     }
 
     switch (dir)
     {
-    case GPIO_IN:
-        if (gpiod_line_request_input(line, "gpio_state") < 0)
+    case GPIO_DIR_IN:
+        if (gpiod_line_request_input(handle->line, "tco_libd") < 0)
         {
             log_error("Request GPIO line as input failed");
-            goto clean_up;
+            gpio_line_close(handle);
+            return ERR_GPIO_CTRL;
         }
         break;
-    case GPIO_OUT:
-        if (gpiod_line_request_output(line, "Consumer", 0) < 0)
+    case GPIO_DIR_OUT:
+        if (gpiod_line_request_output(handle->line, "tco_libd", 0) < 0)
         {
             log_error("Request GPIO line as output failed");
-            goto clean_up;
+            gpio_line_close(handle);
+            return ERR_GPIO_CTRL;
         }
         break;
-    default:
-        log_error("Unknown gpio_dir, got : %d", dir);
-        goto clean_up;
     }
 
-    gpio_handle.chip = chip;
-    gpio_handle.line = line;
-    return gpio_handle;
-
-clean_up:
-    if (chip != NULL)
-    {
-        gpiod_chip_close(chip);
-    }
-    if (line != NULL)
-    {
-        gpiod_line_release(line);
-    }
-    return gpio_handle;
+    return ERR_OK;
 }
 
-int gpio_line_write(struct gpiod_line *line, enum gpio_value value)
+error_t gpio_line_write(gpio_handle_t *const handle, enum gpio_val const value)
 {
-    int ret = gpiod_line_set_value(line, value);
-    if (ret < 0)
+    if (gpiod_line_set_value(handle->line, value) != 0)
     {
         log_error("Failed to write to GPIO pin.");
+        return ERR_GPIO_READ;
     }
-    return ret;
+    return ERR_OK;
 }
 
-int gpio_line_read(struct gpiod_line *line)
+error_t gpio_line_read(gpio_handle_t *const handle, enum gpio_val *const value)
 {
-    int ret = gpiod_line_get_value(line);
-    if (ret < 0)
+    *value = gpiod_line_get_value(handle->line);
+    if (*value < 0)
     {
         log_error("Failed to read from GPIO pin.");
+        return ERR_GPIO_READ;
     }
-    return ret;
+    return ERR_OK;
 }
 
-void gpio_line_close(struct gpiod_line *line)
+error_t gpio_line_close(gpio_handle_t *const handle)
 {
-    gpiod_line_release(line);
-}
-
-void gpio_chip_close(struct gpiod_chip *chip)
-{
-    gpiod_chip_close(chip);
+    if (handle->line != NULL)
+    {
+        gpiod_line_release(handle->line);
+        handle->line = NULL;
+    }
+    if (handle->chip != NULL)
+    {
+        gpiod_chip_close(handle->chip);
+        handle->chip = NULL;
+    }
+    return ERR_OK;
 }
