@@ -8,6 +8,7 @@ enum gpio_dir
 {
     GPIO_DIR_IN = 0,
     GPIO_DIR_OUT,
+    GPIO_DIR_NONE, /* Great to allow other methods such as RISING_EDGE etc */
 };
 
 enum gpio_val
